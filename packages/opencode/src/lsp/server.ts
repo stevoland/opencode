@@ -50,6 +50,21 @@ export namespace LSPServer {
     }
   }
 
+  const FurthestRoot = (includePatterns: string[]): RootFunction => {
+    return async (file) => {
+      const files = Filesystem.up({
+        targets: includePatterns,
+        start: path.dirname(file),
+        stop: Instance.directory,
+      })
+      const matches: string[] = []
+      for await (const match of files) matches.push(match)
+      const last = matches[matches.length - 1]
+      if (!last) return Instance.directory
+      return path.dirname(last)
+    }
+  }
+
   export interface Info {
     id: string
     extensions: string[]
@@ -1129,7 +1144,7 @@ export namespace LSPServer {
 
   export const JDTLS: Info = {
     id: "jdtls",
-    root: NearestRoot(["pom.xml", "build.gradle", "build.gradle.kts", ".project", ".classpath"]),
+    root: FurthestRoot(["pom.xml", "build.gradle", "build.gradle.kts", ".project", ".classpath"]),
     extensions: [".java"],
     async spawn(root) {
       const java = Bun.which("java")
